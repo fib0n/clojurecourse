@@ -1,5 +1,9 @@
 (ns task02.query
+  (:require [clojure.core.match :refer [match]])
   (:use [task02 helpers db]))
+
+(defn make-where-function [column op value]
+  #((resolve (symbol op)) ((keyword column) %) (read-string value)))
 
 ;; Функция выполняющая парсинг запроса переданного пользователем
 ;;
@@ -34,10 +38,34 @@
 ;; ("student" :where #<function> :order-by :id :limit 2 :joins [[:id "subject" :sid]])
 ;; > (parse-select "werfwefw")
 ;; nil
-(defn parse-select [^String sel-string]
-  :implement-me)
+(defn toLowerCaseIfKeyword [^String part]
+  (let [partToLower (.toLowerCase part)]
+    (case partToLower
+      ("select", "where", "order", "by", "limit", "join", "on") partToLower
+      part)))
 
-(defn make-where-function [& args] :implement-me)
+(defn parse-select [^String sel-string]
+  (loop [parsed [] req (vec (map toLowerCaseIfKeyword (.split sel-string " ")))]
+    (match req
+           [] parsed
+
+           ["select" tbl & other]
+           (recur (conj parsed tbl) other)
+
+           ["limit" n & other]
+           (recur (concat parsed [:limit (parse-int n)]) other)
+
+           ["order" "by" column & other]
+           (recur (concat parsed [:order-by (keyword column)]) other)
+
+           ["where" column op value & other]
+           (recur (concat parsed [:where (make-where-function column op value)]) other)
+
+           ["join" otherTbl "on" left "=" right & _]
+           (concat parsed [:joins [[(keyword left) otherTbl (keyword right)]]])
+
+           :else nil)))
+
 
 ;; Выполняет запрос переданный в строке.  Бросает исключение если не удалось распарсить запрос
 
