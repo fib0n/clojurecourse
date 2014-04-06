@@ -8,5 +8,14 @@
 
   ;; Hint: load-initial-data, pr-str, perform-query
   ; :implement-me
-  )
+(:gen-class
+    :methods
+      [^:static [InitDatabase [] void]
+       ^:static [Select [String] String]]))
+
+(defn -InitDatabase []
+  (load-initial-data))
+
+(defn -Select [^String query]
+  (pr-str (perform-query query)))
 
