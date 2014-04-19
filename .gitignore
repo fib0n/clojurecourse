@@ -16,3 +16,5 @@ task02-new/target/repl-port
 task02-new/.lein-repl-history
 
 task02-new/.nrepl-port
+
+*.zip

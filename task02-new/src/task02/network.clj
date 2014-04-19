@@ -19,7 +19,9 @@
           (deliver should-be-finished true) ;;; 1) сообщить основному потоку что мы завершаем выполнение.
                ;;; для этого необходимо установить переменную should-be-finished в true
                ;;;
-          (println (perform-query s)) ;;; 2) выполнить запрос при помощи perform-query и записать
+          (do
+            ;;(task02.db/load-initial-data)
+            (println (perform-query s))) ;;; 2) выполнить запрос при помощи perform-query и записать
                ;;; результат в переопределенный *out*
           ))
       (catch Throwable ex
@@ -41,7 +43,7 @@
       )))
 
 (defn run [port]
-  (let [sock-addr (InetSocketAddress. nil port)
+  (let [sock-addr (InetSocketAddress. "localhost" port)
         server-socket (doto (ServerSocket.)
                         (.setReuseAddress true)
                         (.setSoTimeout 3000)
