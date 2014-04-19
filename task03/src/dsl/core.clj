@@ -8,7 +8,7 @@
 
 (comment
   (defn one [] 1)
-  
+
   ;; Примеры вызова
   (with-datetime
     (if (> today tomorrow) (println "Time goes wrong"))
@@ -32,7 +32,12 @@
 ;; Если получены не даты, то выполнить операцию op в обычном порядке:
 ;; (op d1 d2).
 (defn d-op [op d1 d2]
-  :ImplementMe!)
+  (if (and
+      (instance? java.util.Date d1)
+      (instance? java.util.Date d2))
+     (op (.getTime d1) (.getTime d2))
+     (op d1 d2)))
+
 
 ;; Пример вызова:
 ;; (d-add today '+ 1 'day)
@@ -50,7 +55,19 @@
 ;; И так далее.
 ;; Результат работы функции - новая дата, получаемая из календаря так: (.getTime cal)
 (defn d-add [date op num period]
-  :ImplementMe!)
+  (.setTime cal date)
+  (.add cal
+          (case period
+            (day, days) java.util.Calendar/DATE
+            (week, weeks) java.util.Calendar/WEEK_OF_YEAR
+            (month, months) java.util.Calendar/MONTH
+            (year, years) java.util.Calendar/YEAR
+            (hour, hours) java.util.Calendar/HOUR
+            (minute, minutes) java.util.Calendar/MINUTE
+            (second, seconds) java.util.Calendar/SECOND)
+        (read-string (str op num)))
+  (.getTime cal))
+
 
 ;; Можете использовать эту функцию для того, чтобы определить,
 ;; является ли список из 4-х элементов тем самым списком, который создает новую дату,
@@ -64,12 +81,21 @@
          (contains? #{'day 'days 'week 'weeks 'month 'months 'year 'years
                       'hour 'hours 'minute 'minutes 'second 'seconds} period ))))
 
+(defn is-date-comp? [code]
+    (and (list? code)
+         (= (count code) 3)
+         (contains? #{'< '<= '> '>=} (first code))))
+
 ;; В code содержится код-как-данные. Т.е. сам code -- коллекция, но его содержимое --
 ;; нормальный код на языке Clojure.
 ;; Нам необходимо пройтись по каждому элементу этого кода, найти все списки из 3-х элементов,
 ;; в которых выполняется сравнение, и подставить вместо этого кода вызов d-op;
 ;; а для списков из четырех элементов, в которых создаются даты, подставить функцию d-add.
 (defmacro with-datetime [& code]
-  :ImplementMe!)
-
-
+  `(do ~@(postwalk #(cond
+                        (is-date-comp? %) `(d-op ~@%)
+                        (and (list? %)(is-date-op? %))
+                          (let [[date op num period] %]
+                            `(d-add ~date '~op ~num '~period))
+                        :else %)
+                     code)))
